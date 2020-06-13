@@ -5,7 +5,8 @@ import pause from './access/pause.svg'
 import resetTime from './access/time.svg'
 import arrow from './access/arrow.svg'
 import {connect} from "react-redux";
-import {addBreakLength, addSessionLength, changeSessionLength, reset, startStopTimer} from "./redux/appReduxer";
+import {addBreakLength, addSessionLength, reset, startStopTimer} from "./redux/appReduxer";
+import {getFormate} from "./utils";
 
 let Setting = ({title, value, upWork, upRest, downWork, downRest, category}) => {
   let onUpArrow = () => {
@@ -13,8 +14,7 @@ let Setting = ({title, value, upWork, upRest, downWork, downRest, category}) => 
   }
   
   let onDownArrow = () => {
-    let f = category === 'work' ? downWork : downRest;
-    f();
+    category === 'work' ? downWork() : downRest();
   }
   return (
     <div className='setting'>
@@ -32,23 +32,22 @@ let ButtonWithSvg = ({svg, alt, onClick}) => {
   return <img className='buttonImg' onClick={onClick || null} src={svg} alt={alt}/>
 }
 
-let addZero = num => num < 10 ? `0${num}` : num
-let getFormate = seconds => `${addZero(Math.floor(seconds / 60))}:${addZero(seconds % 60)}`
-
 class App extends React.Component {
   render() {
     let {breakLength, sessionLength, currentTimeSession, currentTimeBreak, isProcess, currentMode} = this.props;
     let isRest = currentMode === 'rest';
     
-      let currentTimeSessionMin = getFormate(currentTimeSession)
-      let currentTimeRestMin = getFormate(currentTimeBreak)
+    let currentTimeSessionMin = getFormate(currentTimeSession)
+    let currentTimeRestMin = getFormate(currentTimeBreak)
     return (
       <div className='wrapper'>
         <div className="title">Pomodoro Clock</div>
         <div className='screen'>
           <div className="settings">
-            <Setting title='Break Length' value={breakLength} upRest={this.props.upRest} downRest={this.props.downRest}/>
-            <Setting title='Session Length' category='work' upWork={this.props.upWork} downWork={this.props.downWork} value={sessionLength}/>
+            <Setting title='Break Length' value={breakLength} upRest={this.props.upRest}
+                     downRest={this.props.downRest}/>
+            <Setting title='Session Length' category='work' upWork={this.props.upWork} downWork={this.props.downWork}
+                     value={sessionLength}/>
           </div>
           
           <div className="visualInfo">
@@ -63,33 +62,21 @@ class App extends React.Component {
             <ButtonWithSvg svg={resetTime} alt='restart' onClick={this.props.reset}/>
           </div>
         </div>
-        <audio
-          id="beep"
-          preload="auto"
-          src="https://raw.githubusercontent.com/freeCodeCamp/cdn/master/build/testable-projects-fcc/audio/BeepSound.wav"
-          ref={(audio) => {
-            this.audioBeep = audio;
-          }}
-        />
       </div>
     )
   }
 }
 
 let mapStateToProp = state => ({
-  breakLength: state.app.breakLength,
-  sessionLength: state.app.sessionLength,
-  currentTimeSession: state.app.currentTimeSession,
-  currentTimeBreak: state.app.currentTimeBreak,
-  isProcess: state.app.isProcess,
-  currentMode: state.app.currentMode
+  breakLength: state.breakLength,
+  sessionLength: state.sessionLength,
+  currentTimeSession: state.currentTimeSession,
+  currentTimeBreak: state.currentTimeBreak,
+  isProcess: state.isProcess,
+  currentMode: state.currentMode
 })
 
 let mapDispatchToProps = dispatch => ({
-  changeSessionLength: (isProcess) => {
-    dispatch(changeSessionLength(isProcess))
-  },
-  
   upWork: () => {
     dispatch(addSessionLength('Up'))
   },
