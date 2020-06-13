@@ -7,21 +7,23 @@ const START_TIMER = 'START_TIMER'
 const TIME_REDUCTION = 'TIME_REDUCTION'
 const PAUSE_TIMER = 'PAUSE_TIMER';
 
-let initalizeState = {
+let initializationState = {
   breakLength: 5,
   sessionLength: 25,
   currentTimeSession: 1500,
   currentTimeBreak: 300,
   isProcess: false,
-  timerId: '',
+  timerId: null,
   currentMode: 'session'
 }
 document.title = 'Pomodoro Clock'
 
-let appReducer = (state = initalizeState, action) => {
+export default (state = initializationState, action) => {
   switch (action.type) {
     case ADD_SESSION_LENGTH: {
-      if (state.sessionLength > 1 && action.min < 0 || state.sessionLength < 60 && action.min > 0) {
+      if (
+        ((state.sessionLength > 1 && action.min < 0)|| (state.sessionLength < 60 && action.min > 0))
+        && !state.isProcess) {
         return {
           ...state,
           sessionLength: state.sessionLength + action.min,
@@ -32,7 +34,9 @@ let appReducer = (state = initalizeState, action) => {
     }
     
     case ADD_BREAK_LENGTH: {
-      if (state.breakLength > 1 && action.min < 0 || state.breakLength < 60 && action.min > 0) {
+      if (
+        ((state.breakLength > 1 && action.min < 0) || (state.breakLength < 60 && action.min > 0))
+        && !state.isProcess) {
         return {
           ...state,
           breakLength: state.breakLength + action.min,
@@ -43,17 +47,17 @@ let appReducer = (state = initalizeState, action) => {
     }
     
     case RESET: {
-        document.title = 'Pomodoro Clock'
-        return {
-          ...initalizeState
-        }
+      document.title = 'Pomodoro Clock'
+      clearTimeout(state.timerId)
+      return {
+        ...initializationState
+      }
     }
     
     case TIME_REDUCTION: {
       if (state.currentMode === 'session') {
         // SESSION
         document.title = `Session: ${getFormate(state.currentTimeSession - 1)}`
-        debugger
         if (state.currentTimeSession === 1) {
           return {
             ...state,
@@ -69,11 +73,11 @@ let appReducer = (state = initalizeState, action) => {
       } else {
         // REST
         document.title = `Rest: ${getFormate(state.currentTimeBreak - 1)}`
-  
+        
         if (state.currentTimeBreak === 1) {
           return {
             ...state,
-            currentTimeSession: state.currentTimeBreak * 60,
+            currentTimeBreak: state.breakLength * 60,
             currentMode: 'session'
           }
         }
@@ -104,58 +108,20 @@ let appReducer = (state = initalizeState, action) => {
   }
 }
 
-export let changeSessionLength = (isProcess) => dispatch => {
-  if (!isProcess) {
-    dispatch(isProcess())
-  }
-}
-
-export let addSessionLength = (direction) => {
-  let min = direction === 'Up' ? 1 : -1;
-  return {
-    type: ADD_SESSION_LENGTH,
-    min
-  }
-}
-
-
-export let addBreakLength = (direction) => {
-  let min = direction === 'Up' ? 1 : -1;
-  return {
-    type: ADD_BREAK_LENGTH,
-    min
-  }
-}
-
-export let reset = () => ({
-  type: RESET
-})
-
 export let startStopTimer = (status) => dispatch => {
   if (status === 'Start') {
-    let userId = setInterval(() => {
+    let timerId = setInterval(() => {
       dispatch(timeReduction())
     }, 1000)
-    dispatch(startTimer(true, userId));
+    dispatch(startTimer(timerId));
   } else {
     dispatch(pauseTime())
   }
 }
 
-export let timeReduction = () => {
-  return {
-    type: TIME_REDUCTION
-  }
-}
-
-export let startTimer = (status, timerId) => ({
-  type: START_TIMER,
-  status,
-  timerId
-})
-
-export let pauseTime = () => ({
-  type: PAUSE_TIMER
-})
-
-export default appReducer
+export let addSessionLength = (direction) => ({type: ADD_SESSION_LENGTH, min: direction === 'Up' ? 1 : -1})
+export let addBreakLength = (direction) => ({type: ADD_BREAK_LENGTH, min: direction === 'Up' ? 1 : -1})
+export let reset = () => ({type: RESET})
+export let timeReduction = () => ({type: TIME_REDUCTION})
+export let startTimer = (timerId) => ({type: START_TIMER, timerId})
+export let pauseTime = () => ({type: PAUSE_TIMER})
